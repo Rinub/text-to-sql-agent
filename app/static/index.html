@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Self-Healing Text-to-SQL Agent</title>
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <!-- Styles -->
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Top Navigation Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo-icon">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+            <path d="M3 5c0 1.66 4 3 9 3s9-1.34 9-3"></path>
+            <path d="M21 5v14c0 1.66-4 3-9 3s-9-1.34-9-3V5"></path>
+            <path d="M12 12v9"></path>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Text to SQL Agent</h1>
+          <span class="subtext">Self-Healing AI • Gemini 3.6 & LangGraph</span>
+        </div>
+      </div>
+      
+      <div class="header-actions">
+        <div class="status-badge" id="system-status">
+          <span class="status-dot"></span>
+          <span class="status-text">Connected</span>
+        </div>
+        <button id="toggle-schema-btn" class="btn btn-secondary">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+          </svg>
+          Schema Explorer
+        </button>
+        <a href="/docs" target="_blank" class="btn btn-outline">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+            <polyline points="15 3 21 3 21 9"></polyline>
+            <line x1="10" y1="14" x2="21" y2="3"></line>
+          </svg>
+          Swagger API
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Layout Content -->
+    <div class="main-content">
+      
+      <!-- Sidebar Schema Inspector -->
+      <aside class="schema-sidebar" id="schema-sidebar">
+        <div class="sidebar-header">
+          <h3>Database Schema</h3>
+          <span class="badge badge-subtle" id="table-count">4 tables</span>
+        </div>
+        <div class="schema-tree" id="schema-tree">
+          <div class="loading-placeholder">Loading schema...</div>
+        </div>
+      </aside>
+
+      <!-- Main Query & Results Area -->
+      <main class="workspace">
+        
+        <!-- Query Input Card -->
+        <section class="card query-card">
+          <form id="query-form">
+            <div class="input-wrapper">
+              <label for="question-input" class="input-label">Ask a question in plain English</label>
+              <textarea 
+                id="question-input" 
+                placeholder="e.g. What are the top 5 customers by total spending?" 
+                rows="3" 
+                required
+              ></textarea>
+            </div>
+            
+            <div class="query-footer">
+              <div class="chips-container">
+                <span class="chips-label">Try asking:</span>
+                <div class="chips-scroll">
+                  <button type="button" class="chip" data-question="How many customers are there?">👥 Customer count</button>
+                  <button type="button" class="chip" data-question="What are the top 5 customers by total spending?">🏆 Top 5 customers</button>
+                  <button type="button" class="chip" data-question="What is the total revenue by product category?">📊 Revenue by category</button>
+                  <button type="button" class="chip" data-question="Show all products under $50">🏷️ Cheap products</button>
+                  <button type="button" class="chip" data-question="List all orders with status shipped">📦 Shipped orders</button>
+                </div>
+              </div>
+              
+              <button type="submit" class="btn btn-primary" id="submit-btn">
+                <span class="btn-text">Execute Query</span>
+                <span class="spinner hidden"></span>
+              </button>
+            </div>
+          </form>
+        </section>
+
+        <!-- Loading State Indicator -->
+        <div id="loading-state" class="card loading-card hidden">
+          <div class="pulse-loader">
+            <div class="pulse-ring"></div>
+            <div class="pulse-ring"></div>
+          </div>
+          <div class="loading-text">
+            <h4>Agent is reasoning...</h4>
+            <p>Analyzing schema → Generating SQL → Validating safety → Executing</p>
+          </div>
+        </div>
+
+        <!-- Results Card Section -->
+        <section id="results-section" class="results-section hidden">
+          
+          <!-- Metadata Bar -->
+          <div class="results-meta">
+            <div class="meta-item">
+              <span class="meta-label">Status</span>
+              <span id="status-badge" class="badge">Success</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Attempts</span>
+              <span id="attempts-badge" class="badge badge-outline">1 Attempt</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Rows Returned</span>
+              <span id="rows-badge" class="badge badge-subtle">0 rows</span>
+            </div>
+          </div>
+
+          <!-- Error Alert (Hidden by default) -->
+          <div id="error-alert" class="alert alert-danger hidden">
+            <div class="alert-icon">⚠️</div>
+            <div class="alert-body">
+              <h4 id="error-title">Query Execution Failed</h4>
+              <p id="error-message"></p>
+            </div>
+          </div>
+
+          <!-- Generated SQL Code Box -->
+          <div class="card sql-card">
+            <div class="card-header">
+              <div class="header-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="16 18 22 12 16 6"></polyline>
+                  <polyline points="8 6 2 12 8 18"></polyline>
+                </svg>
+                <span>Generated SQL Query</span>
+              </div>
+              <div class="header-tools">
+                <span class="badge badge-success">Read-Only Safe</span>
+                <button id="copy-sql-btn" class="btn btn-icon" title="Copy SQL">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                  </svg>
+                  <span id="copy-btn-text">Copy</span>
+                </button>
+              </div>
+            </div>
+            <pre class="sql-code-block"><code id="sql-code">SELECT * FROM ...;</code></pre>
+          </div>
+
+          <!-- Data Output View Card -->
+          <div class="card data-card">
+            <div class="card-header">
+              <div class="header-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="8" y1="6" x2="21" y2="6"></line>
+                  <line x1="8" y1="12" x2="21" y2="12"></line>
+                  <line x1="8" y1="18" x2="21" y2="18"></line>
+                  <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                  <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                  <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                <span>Query Results</span>
+              </div>
+              <div class="view-toggle">
+                <button class="toggle-btn active" id="view-table-btn">Table</button>
+                <button class="toggle-btn" id="view-json-btn">JSON</button>
+              </div>
+            </div>
+
+            <!-- Table View -->
+            <div id="table-container" class="table-container">
+              <table id="data-table">
+                <thead></thead>
+                <tbody></tbody>
+              </table>
+            </div>
+
+            <!-- Raw JSON View -->
+            <div id="json-container" class="json-container hidden">
+              <pre><code id="json-code">[]</code></pre>
+            </div>
+          </div>
+
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
