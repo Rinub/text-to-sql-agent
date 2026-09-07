@@ -56,8 +56,13 @@ cd text-to-sql-agent
 ```bash
 python -m venv venv
 
-# Windows
+# Windows (PowerShell)
+# If script execution is restricted, run this line first:
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope Process
 venv\Scripts\activate
+
+# Or use cmd activator:
+# .\venv\Scripts\activate.bat
 
 # macOS/Linux
 source venv/bin/activate
