@@ -90,6 +90,9 @@ python run.py
 ### 6. Open Swagger UI
 Navigate to **http://localhost:8000/docs** in your browser.
 
+###  Open web UI
+Navigate to **http://localhost:8000/** in your browser.
+
 ## 📡 API Endpoints
 
 | Method | Endpoint | Description |

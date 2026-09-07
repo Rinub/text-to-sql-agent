@@ -51,8 +51,9 @@ class TestRootEndpoint:
     def test_root(self):
         response = client.get("/")
         assert response.status_code == 200
-        data = response.json()
-        assert "docs" in data
+        assert "text/html" in response.headers["content-type"]
+        assert "Text to SQL Agent" in response.text
+
 
 
 class TestQueryEndpoint:

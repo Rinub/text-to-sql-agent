@@ -47,15 +47,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
 # Mount API routes
 app.include_router(api_router, prefix="/api/v1")
 
+# Mount Static files for UI
+static_dir = Path(__file__).parent / "static"
+app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-@app.get("/", tags=["Root"])
+
+@app.get("/", tags=["UI"])
 async def root():
-    """Root endpoint — redirects to docs."""
-    return {
-        "message": "Self-Healing Text-to-SQL Agent",
-        "docs": "/docs",
-        "health": "/api/v1/health",
-    }
+    """Serve the Web UI."""
+    return FileResponse(static_dir / "index.html")
+
