@@ -9,6 +9,7 @@ Graph flow:
                                                  [error + max retries] → END (with error)
 """
 
+import asyncio
 import json
 from langgraph.graph import StateGraph, START, END
 
@@ -109,8 +110,8 @@ async def run_agent(question: str) -> dict:
         "is_success": False,
     }
 
-    # Run the graph
-    final_state = agent_graph.invoke(initial_state)
+    # Run the graph asynchronously in worker thread
+    final_state = await asyncio.to_thread(agent_graph.invoke, initial_state)
 
     # Parse result back from JSON string if successful
     result_data = final_state.get("result", "")
